@@ -1,0 +1,11 @@
+Known security vulnerabilities detected:
+
+Dependency: kramdown
+Version(s): >= 1.16.0 < 2.3.1
+Vulnerabilities:
+- CVE-2021-28834 (High severity)
+
+Dependency: nokogiri
+Version(s): 1.12.4
+Vulnerabilities:
+- CVE-2021-41098 (High severity)
