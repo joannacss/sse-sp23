@@ -4,7 +4,7 @@ import gzip
 import tempfile
 
 # Obtain the JSON data
-url = "https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-recent.json.gz"
+url = "https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2023.json.gz"#https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-recent.json.gz"
 response = requests.get(url)
 
 
@@ -21,11 +21,13 @@ with tempfile.TemporaryFile() as temp:
         for entry in data['CVE_Items']:
             cve_id = entry['cve']['CVE_data_meta']['ID']
             cve_description = entry['cve']['description']['description_data'][0]['value']
-            print("CVE ID: ", cve_id)
-            print("Description: ", cve_description)
-            
-            for config in entry['configurations']['nodes']:
-                for cpe in config["cpe_match"]:
-                    print("CPE", cpe)
+            if cve_id == "CVE-2023-24455":
+                print("CVE ID: ", cve_id)
+                print("Description: ", cve_description)
+                
+                for config in entry['configurations']['nodes']:
+                    print(config)
+                    for cpe in config["cpe_match"]:
+                        print("CPE", cpe)
     
             
