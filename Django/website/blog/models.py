@@ -4,7 +4,6 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 USERNAME_REGEX = re.compile(r'^[a-zA-Z0-9]+$')
-PASSWORD_REGEX = re.compile(r'^[a-zA-Z0-9]+$')
 
 
 # validator for usernames
@@ -15,7 +14,7 @@ def validate_username(username):
             params={'username': username},
         )
 
-
+# validator for passwords
 def validate_password(password):
     if len(password) < 8:
         raise ValidationError(_("Password must be at least 8 characters long."), code='invalid')
@@ -25,15 +24,14 @@ def validate_password(password):
         raise ValidationError(_("Password must contain at least one uppercase letter."), code='invalid')
     if not any(char.islower() for char in password):
         raise ValidationError(_("Password must contain at least one lowercase letter."), code='invalid')
+    if not re.search("[@&!]", password):
+        raise ValidationError(_("Password must contain at least one of the following: @!&"), code='invalid')
 
 
 class User(models.Model):
-    username = models.CharField(max_length=200, validators=[validate_username])
-    password = models.CharField(max_length=64, validators=[validate_password])
-    email = models.EmailField(max_length=200)
-    #
-    # def __str__(self):
-    #     return self.username
+    username = models.CharField(max_length=200, unique=True, validators=[validate_username])
+    password = models.TextField(validators=[validate_password])
+    email = models.EmailField(max_length=200, unique=True)
 
 
 class Post(models.Model):
