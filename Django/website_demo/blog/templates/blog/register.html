@@ -1,0 +1,31 @@
+{% extends "blog/base.html" %}
+{% block body_content %}
+<h1>User account profile creation</h1>
+{% if errors %}
+<div class="alert alert-danger d-flex align-items-center" role="alert">
+    <ul>
+        {% for error in errors %}
+        <li> {{ error.0 }}: {{error.1}} </li>
+        {% endfor %}
+    </ul>
+</div>
+
+{% endif %}
+<form class="m-auto col-md-3" method="POST">
+    {% csrf_token %}
+    <h1 class="h3 mb-3 fw-normal">Account information</h1>
+    <div class="form-floating">
+        <input type="text" class="form-control" id="username" name="username" placeholder="username">
+        <label for="username">Username</label>
+    </div>
+    <div class="form-floating">
+        <input type="password" class="form-control" id="password" name="password" placeholder="Password">
+        <label for="password">Password</label>
+    </div>
+    <div class="form-floating">
+        <input type="email" class="form-control" id="email" name="email" placeholder="placeholder@example.com">
+        <label for="email">E-mail</label>
+    </div>
+    <button class="w-100 btn btn-lg btn-primary" type="submit">Sign up</button>
+</form>
+{% endblock %}

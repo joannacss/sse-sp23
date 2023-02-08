@@ -1,0 +1,18 @@
+{% extends "blog/base.html" %}
+{% block body_content %}
+<h1>User account profile creation</h1>
+<form class="m-auto col-md-3" method="POST" action="{% url 'blog:create_post' %}">
+    {% csrf_token %}
+    <h1 class="h3 mb-3 fw-normal">Post information</h1>
+    <div class="form-floating">
+        <input type="text" class="form-control" id="title" name="title" placeholder="Title">
+        <label for="title">Title</label>
+    </div>
+    <div class="form-floating">
+        <textarea type="textarea" class="form-control" id="content" name="content"  rows="8">
+        </textarea>
+        <label for="content">Content</label>
+    </div>
+    <button class="w-100 btn btn-lg btn-primary" type="submit">Publish</button>
+</form>
+{% endblock %}
