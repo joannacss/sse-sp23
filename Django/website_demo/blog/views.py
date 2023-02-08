@@ -14,12 +14,23 @@ def index(request):
 
 # /blog/register
 def register(request):
-    # parameters
-    username = request.POST.get("username")
-    pwd = request.POST.get("password")
-    email = request.POST.get("email")
-    #  validate?
-    return render()
+    if request.POST:
+        # parameters
+        username = request.POST.get("username")
+        pwd = request.POST.get("password")
+        email = request.POST.get("email")
+        #  validate?
+        user = User(username=username, password = pwd, email = email)
+        try:
+            user.full_clean()
+            user.password = make_password(pwd)
+            user.save()
+            return HttpResponseRedirect(reverse("blog:login"))
+        except ValidationError as e:
+            return render(request, 'blog/register.html', {"errors": e})
+
+
+    return render(request, 'blog/register.html')
 
 
 def login(request):
