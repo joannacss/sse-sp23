@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.shortcuts import get_object_or_404
 from blog.models import User, Post
 from django.forms import ModelForm
 from django.http import HttpResponseRedirect, HttpResponse
@@ -65,4 +66,30 @@ def list_posts(request):
     context = {
         "posts": Post.objects.all()
     }
-    return render(request, 'blog/list.html')
+    return render(request, 'blog/list.html', context)
+
+
+def create_post(request):
+    errors = None
+    if request.POST:
+        # make sure it is authenticated
+        if request.session.get("user", None):
+            # Create a model instance and populate it with data from the request
+            title = request.POST["title"]
+            content = request.POST["content"]
+            user = User.objects.filter(username=request.session["user"])[0]
+            try:
+                post = Post(creator=user, title=title, content=content)
+                post.save()  # if we reach here, the validation succeeded
+                # redirect to the view posts page
+                return HttpResponseRedirect(reverse('blog:list_posts'))
+            except ValidationError as e:
+                errors = e
+        else:
+            errors = [("authentication", "Only an authenticated user can create posts")]
+    return render(request, 'blog/create.html', {'errors': errors})
+
+
+def view_post(request, post_id):
+    post = get_object_or_404(Post, pk=post_id)
+    return render(request, 'blog/view.html', {'post': post})
