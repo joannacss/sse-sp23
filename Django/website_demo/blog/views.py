@@ -12,6 +12,7 @@ def index(request):
     context = {'course': "CSE-60770", 'semester': 'SP23'}
     return render(request, 'blog/index.html', context)
 
+
 # /blog/register
 def register(request):
     if request.POST:
@@ -20,7 +21,7 @@ def register(request):
         pwd = request.POST.get("password")
         email = request.POST.get("email")
         #  validate?
-        user = User(username=username, password = pwd, email = email)
+        user = User(username=username, password=pwd, email=email)
         try:
             user.full_clean()
             user.password = make_password(pwd)
@@ -28,7 +29,6 @@ def register(request):
             return HttpResponseRedirect(reverse("blog:login"))
         except ValidationError as e:
             return render(request, 'blog/register.html', {"errors": e})
-
 
     return render(request, 'blog/register.html')
 
@@ -39,8 +39,6 @@ def login(request):
 
 def logout(request):
     pass
-
-
 
 
 def create_post(request):
