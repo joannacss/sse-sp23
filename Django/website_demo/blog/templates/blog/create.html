@@ -1,6 +1,8 @@
 {% extends "blog/base.html" %}
 {% block body_content %}
 <h1>User account profile creation</h1>
+
+{{errors}}
 <form class="m-auto col-md-3" method="POST" action="{% url 'blog:create_post' %}">
     {% csrf_token %}
     <h1 class="h3 mb-3 fw-normal">Post information</h1>

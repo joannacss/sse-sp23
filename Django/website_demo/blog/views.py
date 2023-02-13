@@ -34,15 +34,44 @@ def register(request):
 
 
 def login(request):
-    pass
+    if request.POST:
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+        user = User.objects.filter(username=username) # returns a list
+        if len(user) != 0 and check_password(password, user[0].password):
+            request.session["user"] = user[0].username
+            return HttpResponseRedirect(reverse("blog:list_posts"))
+
+        return render(request, 'blog/login.html', {'errors': [('Authentication', 'Username/pwd combination didnt match'), ]})
+    return render(request, 'blog/login.html')
+
 
 
 def logout(request):
-    pass
+    del request.session["user"]
+    return HttpResponseRedirect(reverse("blog:login"))
 
 
 def create_post(request):
-    pass
+    if request.session.get("user"):
+        if request.POST:
+            title = request.POST.get("title")
+            content = request.POST.get("content")
+            user = User.objects.filter(username=request.session["user"])[0]
+            post = Post(title=title, content=content, creator=user)
+            try:
+                print("before full clean")
+                post.full_clean()
+                print("after full clean")
+                post.save()
+                return HttpResponseRedirect(reverse("blog:list_posts"))
+            except ValidationError as e:
+                return render(request, 'blog/create.html', {'errors': e})
+        else:
+            return render(request, 'blog/create.html')
+
+    return HttpResponseRedirect(reverse("blog:login"))
+
 
 
 def list_posts(request):
