@@ -12,7 +12,6 @@ import com.ibm.wala.util.config.AnalysisScopeReader;
 import com.ibm.wala.util.io.FileProvider;
 
 import java.io.File;
-import java.lang.reflect.Type;
 import java.util.jar.JarFile;
 
 public class LiveExampleL13 {
@@ -37,10 +36,7 @@ public class LiveExampleL13 {
         CHACallGraph callGraph = new CHACallGraph(classHierarchy, true);
         Iterable<Entrypoint> entrypoints = Util.makeMainEntrypoints(scope, classHierarchy);
         callGraph.init(entrypoints);
-
-
         System.out.println(callGraph);
-
 
     }
 }

@@ -6,15 +6,17 @@ import com.ibm.wala.ipa.callgraph.propagation.PointerAnalysis;
 import com.ibm.wala.ipa.callgraph.propagation.SSAPropagationCallGraphBuilder;
 import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
 import com.ibm.wala.ipa.cha.IClassHierarchy;
-import com.ibm.wala.ipa.slicer.PDG;
-import com.ibm.wala.ipa.slicer.SDG;
-import com.ibm.wala.ipa.slicer.Slicer;
+import com.ibm.wala.ipa.slicer.*;
 import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.util.CancelException;
 import com.ibm.wala.util.WalaException;
 import com.ibm.wala.util.config.AnalysisScopeReader;
 import com.ibm.wala.util.io.FileProvider;
 import com.ibm.wala.viz.DotUtil;
+import com.ibm.wala.viz.NodeDecorator;
+import viz.GraphVisualizer;
+import viz.StatementEdgeHighlighter;
+import viz.StatementNodeLabeller;
 
 import java.io.File;
 import java.io.IOException;
@@ -63,7 +65,8 @@ public class CallGraphExample {
 
     public static void main(String[] args) throws IOException, WalaException, URISyntaxException, CancelException {
         // creates an analysis scope
-        AnalysisScope scope = createScope(CallGraphExample.class.getResource("Example3.jar").getPath());
+        String jarFilename = "Example4.jar";
+        AnalysisScope scope = createScope(CallGraphExample.class.getResource(jarFilename).getPath());
         // build the class hierarchy
         IClassHierarchy cha = ClassHierarchyFactory.make(scope);
 
@@ -75,12 +78,39 @@ public class CallGraphExample {
         SSAPropagationCallGraphBuilder builder = Util.makeNCFABuilder(1, options, analysisCache, cha, scope);
         builder.makeCallGraph(options, null);
         PointerAnalysis<InstanceKey> pa = builder.getPointerAnalysis();
-        SDG sdg = new SDG(cg,pa, Slicer.DataDependenceOptions.NO_BASE_NO_HEAP, Slicer.ControlDependenceOptions.FULL);
+        SDG sdg = new SDG(cg, pa, Slicer.DataDependenceOptions.NO_BASE_NO_HEAP, Slicer.ControlDependenceOptions.FULL);
 
 //        PDG pdg = sdg.getPDG(cg.getEntrypointNodes().iterator().next());
 //        DotUtil.dotify(pdg,null,"pdg1.dot",null,null);
 
-        DotUtil.dotify(sdg,null,"sdg-example3.dot",null,null);
+//        DotUtil.dotify(sdg,null,"sdg-example3.dot",null,null);
+
+
+        // compute the PDG of the main method, and store the visualization in DOT format
+        CGNode mainNode = cg.getEntrypointNodes().iterator().next();
+        PDG pdg = sdg.getPDG(mainNode);
+        String dotFilename = String.format("pdg-%s-%s.dot", jarFilename.replace(".jar", ""), mainNode.getMethod().getName());
+//        NodeDecorator<Statement> nodeDecorator = new NodeDecorator<>() {
+//            @Override
+//            public String getLabel(Statement statement) throws WalaException {
+//                switch (statement.getKind()) {
+//                    case NORMAL:
+//                        return ((NormalStatement) statement).getInstruction().toString(statement.getNode().getIR().getSymbolTable());
+//                    case METHOD_ENTRY:
+//                    case METHOD_EXIT:
+//                        return String.format("%s\\n%s %s", statement.getKind(), statement.getNode().getMethod().getName(), statement.getNode().getContext());
+//                    default:
+//                        return statement.toString().replace(statement.getNode().toString(), "");
+//                }
+//            }
+//        };
+//        DotUtil.dotify(pdg, nodeDecorator, dotFilename, null, null);
+
+
+        GraphVisualizer<Statement> visualizer = new GraphVisualizer<>(dotFilename , new StatementNodeLabeller(sdg) ,null, new StatementEdgeHighlighter(sdg), null);
+        visualizer.generateVisualGraph(pdg, new File(dotFilename));
+//        new GraphVisualizer<Statement>(dotFilename, new StatementNodeLabeller(sdg),null,new StatementEdgeHighlighter(sdg));
+
     }
 }
 

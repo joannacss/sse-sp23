@@ -1,3 +1,5 @@
+package viz;
+
 import com.ibm.wala.cfg.ControlFlowGraph;
 import com.ibm.wala.cfg.Util;
 import com.ibm.wala.ipa.callgraph.CGNode;
