@@ -1,6 +1,5 @@
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.ShrikeBTMethod;
-import com.ibm.wala.classLoader.ShrikeCTMethod;
 import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.AnalysisScope;
@@ -26,11 +25,9 @@ import com.ibm.wala.util.graph.GraphSlicer;
 import com.ibm.wala.util.graph.traverse.BFSPathFinder;
 import com.ibm.wala.util.io.FileProvider;
 import com.ibm.wala.util.strings.Atom;
-import viz.StatementNodeLabeller;
 
 import java.io.File;
 import java.net.URL;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -49,47 +46,46 @@ public class TaintAnalysisExample {
     }
 
     public static void main(String[] args) throws Exception {
+        // build the analysis scope
         File exFile = new FileProvider().getFile("Java60RegressionExclusions.txt");
-
         URL resource = SDGExample.class.getResource("Example4.jar");
         AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(resource.getPath(), exFile);
         String runtimeClasses = SDGExample.class.getResource("jdk-17.0.1/rt.jar").getPath();
         AnalysisScopeReader.addClassPathToScope(runtimeClasses, scope, ClassLoaderReference.Primordial);
 
+        // Compute a 1-CFA call graph
         IClassHierarchy classHierarchy = ClassHierarchyFactory.make(scope);
-
         AnalysisOptions options = new AnalysisOptions();
         options.setEntrypoints(Util.makeMainEntrypoints(scope, classHierarchy));
         SSAPropagationCallGraphBuilder builder = Util.makeNCFABuilder(1, options, new AnalysisCacheImpl(), classHierarchy, scope);
         CallGraph callGraph = builder.makeCallGraph(options);
 
+
+        // compute the program's SDG
         PointerAnalysis<InstanceKey> pa = builder.getPointerAnalysis();
-
-
         SDG<InstanceKey> sdg = new SDG(callGraph, pa, Slicer.DataDependenceOptions.NO_BASE_NO_HEAP, Slicer.ControlDependenceOptions.NO_EXCEPTIONAL_EDGES);
 
+        // find sources and sinks
         Set<Statement> sinks = findSinks(sdg);
         Set<Statement> sources = findSources(sdg);
 
+        // slice the SDG
         Set<Statement> slice = new HashSet<>(Slicer.computeBackwardSlice(sdg, sinks));
-//        StatementNodeLabeller statementNodeLabeller = new StatementNodeLabeller(sdg);
-//        slice.stream().filter(s -> isApplicationScope(s.getNode().getMethod().getDeclaringClass())).forEach(s ->{
-//            System.out.println(statementNodeLabeller.getLabel(s));
-//        });
-
         Graph<Statement> slicedSdg = GraphSlicer.prune(sdg, s -> slice.contains(s));
 
-        Set<List<Statement>> vulnerablePaths = getVulnerablePaths(sdg, sources, sinks);
+        // find vulnerable paths
+        System.out.println(slicedSdg.getNumberOfNodes());
+        Set<List<Statement>> vulnerablePaths = getVulnerablePaths(slicedSdg, sources, sinks);
 
         for (List<Statement> path : vulnerablePaths) {
             System.out.println("VULNERABLE PATH");
-            for (Statement statement : path) {
+            for (Statement s : path) {
 
-                if (statement.getKind() == Statement.Kind.NORMAL) {
-                    System.out.println("\t" + ((NormalStatement) statement).getInstruction());
-                    int instructionIndex = ((NormalStatement) statement).getInstructionIndex();
-                    int lineNum = statement.getNode().getMethod().getLineNumber(instructionIndex);
-                    System.out.println("\t\tSource line number = " + lineNum );
+                if (s.getKind() == Statement.Kind.NORMAL) {
+                    System.out.println("\t" + ((NormalStatement) s).getInstruction());
+                    int instructionIndex = ((NormalStatement) s).getInstructionIndex();
+                    int lineNum = getLineNumber(s);
+                    System.out.println("\t\tSource line number = " + lineNum);
                 }
             }
             System.out.println("------------------------------");
@@ -98,14 +94,14 @@ public class TaintAnalysisExample {
 
     }
 
-    public int getLineNumber(Statement s) {
+    public static int getLineNumber(Statement s) {
         if (s.getKind() == Statement.Kind.NORMAL) { // ignore special kinds of statements
             int bcIndex, instructionIndex = ((NormalStatement) s).getInstructionIndex();
             try {
                 bcIndex = ((ShrikeBTMethod) s.getNode().getMethod()).getBytecodeIndex(instructionIndex);
                 try {
                     int src_line_number = s.getNode().getMethod().getLineNumber(bcIndex);
-                    System.err.println("Source line number = " + src_line_number);
+                    return src_line_number;
                 } catch (Exception e) {
                     System.err.println("Bytecode index no good");
                     System.err.println(e.getMessage());

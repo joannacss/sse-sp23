@@ -106,10 +106,10 @@ public class GraphVisualizer<T> {
         // prints nodes labels first
         for (T node : g) {
             if (nodeRemover == null || !nodeRemover.isIrrelevantNode(node)) {
-                dotStringBuffer.append("\t\"").append(nodeLabeller.getLabel(node)).append("\"");
+//                dotStringBuffer.append("\t\"").append(nodeLabeller.getLabel(node)).append("\"");
                 dotStringBuffer.append("\tN").append(nGraph.getNumber(node))
-                        .append("[label=<").append(nodeLabeller.getLabel(node)).append(">");
-                dotStringBuffer.append(nodeHighliter != null ? nodeHighliter.getAttributes(node).substring(1) : "");
+                        .append("[label=\"").append(nodeLabeller.getLabel(node)).append("\"");
+                dotStringBuffer.append(nodeHighliter != null ? "," + nodeHighliter.getAttributes(node).substring(1) : "");
                 dotStringBuffer.append(";\n");
             }
         }

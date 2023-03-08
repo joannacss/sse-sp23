@@ -18,11 +18,11 @@ public class StatementNodeLabeller implements GraphVisualizer.NodeLabeller<State
     @Override
     public String getLabel(Statement s) {
 
-        if (s instanceof StatementWithInstructionIndex) {
-            SymbolTable symbolTable = s.getNode().getIR().getSymbolTable();
-            return /* sdg.getNumber(s) + "_" + */ ((StatementWithInstructionIndex) s).getInstruction().toString(symbolTable);
-        }
         switch (s.getKind()) {
+            case NORMAL:
+                return /* sdg.getNumber(s) + "_" + */ ((StatementWithInstructionIndex) s).getInstruction().toString(s.getNode().getIR().getSymbolTable());
+            case PHI:
+                return "PHI: " + ((PhiStatement) s).getPhi().toString(s.getNode().getIR().getSymbolTable());
             case PARAM_CALLEE:
                 return /* sdg.getNumber(s) + "_" + */"PARAM_CALLEE: " + ((ParamCallee) s).getValueNumber() + " " + s.getNode().getMethod().getSignature();
             case PARAM_CALLER:
