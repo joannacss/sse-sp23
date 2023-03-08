@@ -23,7 +23,7 @@ import java.net.URL;
 
 import static com.ibm.wala.ipa.slicer.Statement.Kind.NORMAL;
 
-public class LiveExampleL19Completed {
+public class SDGExample {
 
     /**
      * True if the IClass is under the application-scope ({@code ClassLoaderReference.Application}).
@@ -76,9 +76,9 @@ public class LiveExampleL19Completed {
     public static void main(String[] args) throws Exception {
         File exFile = new FileProvider().getFile("Java60RegressionExclusions.txt");
 
-        URL resource = LiveExampleL19Completed.class.getResource("Example1.jar");
+        URL resource = SDGExample.class.getResource("Example1.jar");
         AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(resource.getPath(), exFile);
-        String runtimeClasses = LiveExampleL19Completed.class.getResource("jdk-17.0.1/rt.jar").getPath();
+        String runtimeClasses = SDGExample.class.getResource("jdk-17.0.1/rt.jar").getPath();
         AnalysisScopeReader.addClassPathToScope(runtimeClasses, scope, ClassLoaderReference.Primordial);
 
         // Class Hierarchy DEMO

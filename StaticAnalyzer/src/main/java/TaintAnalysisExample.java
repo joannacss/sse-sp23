@@ -1,4 +1,3 @@
-import com.ibm.wala.cast.java.loader.JavaSourceLoaderImpl;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.ShrikeBTMethod;
 import com.ibm.wala.classLoader.ShrikeCTMethod;
@@ -27,17 +26,18 @@ import com.ibm.wala.util.graph.GraphSlicer;
 import com.ibm.wala.util.graph.traverse.BFSPathFinder;
 import com.ibm.wala.util.io.FileProvider;
 import com.ibm.wala.util.strings.Atom;
+import viz.StatementNodeLabeller;
 
 import java.io.File;
 import java.net.URL;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import static com.ibm.wala.types.TypeReference.findOrCreate;
 
-public class SlicingExampleL19Completed {
-
+public class TaintAnalysisExample {
     /**
      * True if the IClass is under the application-scope ({@code ClassLoaderReference.Application}).
      *
@@ -51,9 +51,9 @@ public class SlicingExampleL19Completed {
     public static void main(String[] args) throws Exception {
         File exFile = new FileProvider().getFile("Java60RegressionExclusions.txt");
 
-        URL resource = LiveExampleL19Completed.class.getResource("Example4.jar");
+        URL resource = SDGExample.class.getResource("Example4.jar");
         AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(resource.getPath(), exFile);
-        String runtimeClasses = LiveExampleL19Completed.class.getResource("jdk-17.0.1/rt.jar").getPath();
+        String runtimeClasses = SDGExample.class.getResource("jdk-17.0.1/rt.jar").getPath();
         AnalysisScopeReader.addClassPathToScope(runtimeClasses, scope, ClassLoaderReference.Primordial);
 
         IClassHierarchy classHierarchy = ClassHierarchyFactory.make(scope);
@@ -66,9 +66,18 @@ public class SlicingExampleL19Completed {
         PointerAnalysis<InstanceKey> pa = builder.getPointerAnalysis();
 
 
-        SDG<InstanceKey> sdg = new SDG(callGraph, pa, Slicer.DataDependenceOptions.NO_BASE_NO_HEAP_NO_EXCEPTIONS, Slicer.ControlDependenceOptions.NO_EXCEPTIONAL_EDGES);
+        SDG<InstanceKey> sdg = new SDG(callGraph, pa, Slicer.DataDependenceOptions.NO_BASE_NO_HEAP, Slicer.ControlDependenceOptions.NO_EXCEPTIONAL_EDGES);
+
         Set<Statement> sinks = findSinks(sdg);
         Set<Statement> sources = findSources(sdg);
+
+        Set<Statement> slice = new HashSet<>(Slicer.computeBackwardSlice(sdg, sinks));
+//        StatementNodeLabeller statementNodeLabeller = new StatementNodeLabeller(sdg);
+//        slice.stream().filter(s -> isApplicationScope(s.getNode().getMethod().getDeclaringClass())).forEach(s ->{
+//            System.out.println(statementNodeLabeller.getLabel(s));
+//        });
+
+        Graph<Statement> slicedSdg = GraphSlicer.prune(sdg, s -> slice.contains(s));
 
         Set<List<Statement>> vulnerablePaths = getVulnerablePaths(sdg, sources, sinks);
 
@@ -79,8 +88,8 @@ public class SlicingExampleL19Completed {
                 if (statement.getKind() == Statement.Kind.NORMAL) {
                     System.out.println("\t" + ((NormalStatement) statement).getInstruction());
                     int instructionIndex = ((NormalStatement) statement).getInstructionIndex();
-                    int lineNum = ((ShrikeCTMethod) statement.getNode().getMethod()).getLineNumber(instructionIndex);
-                    System.out.println("Source line number = " + lineNum );
+                    int lineNum = statement.getNode().getMethod().getLineNumber(instructionIndex);
+                    System.out.println("\t\tSource line number = " + lineNum );
                 }
             }
             System.out.println("------------------------------");
@@ -89,19 +98,19 @@ public class SlicingExampleL19Completed {
 
     }
 
-    public int getLineNumber(Statement s){
+    public int getLineNumber(Statement s) {
         if (s.getKind() == Statement.Kind.NORMAL) { // ignore special kinds of statements
             int bcIndex, instructionIndex = ((NormalStatement) s).getInstructionIndex();
             try {
                 bcIndex = ((ShrikeBTMethod) s.getNode().getMethod()).getBytecodeIndex(instructionIndex);
                 try {
                     int src_line_number = s.getNode().getMethod().getLineNumber(bcIndex);
-                    System.err.println ( "Source line number = " + src_line_number );
+                    System.err.println("Source line number = " + src_line_number);
                 } catch (Exception e) {
                     System.err.println("Bytecode index no good");
                     System.err.println(e.getMessage());
                 }
-            } catch (Exception e ) {
+            } catch (Exception e) {
                 System.err.println("it's probably not a BT method (e.g. it's a fakeroot method)");
                 System.err.println(e.getMessage());
             }
@@ -109,7 +118,7 @@ public class SlicingExampleL19Completed {
         return -1;
     }
 
-    private static Set<Statement> findSources(SDG<InstanceKey> sdg) {
+    public static Set<Statement> findSources(SDG<InstanceKey> sdg) {
 
         Set<Statement> result = new HashSet<>();
         for (Statement s : sdg) {
@@ -149,7 +158,7 @@ public class SlicingExampleL19Completed {
     }
 
 
-    public static Set<List<Statement>> getVulnerablePaths(SDG<? extends InstanceKey> G, Set<Statement> sources, Set<Statement> sinks) {
+    public static Set<List<Statement>> getVulnerablePaths(Graph<Statement> G, Set<Statement> sources, Set<Statement> sinks) {
         Set<List<Statement>> result = HashSetFactory.make();
         for (Statement src : G) {
             if (sources.contains(src)) {

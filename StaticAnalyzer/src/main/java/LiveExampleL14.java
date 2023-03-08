@@ -20,7 +20,13 @@ import com.ibm.wala.util.io.FileProvider;
 import java.io.File;
 import java.util.Collection;
 import java.util.jar.JarFile;
-
+/**
+ * Example coded in class - Lecture 14.
+ * Walked through  how to create RTA and n_CFA call graphs.
+ * Also demonstrate how to create an SDG.
+ *
+ * @author Joanna C. S. Santos
+ */
 public class LiveExampleL14 {
     public static void main(String[] args) throws Exception {
         String cp = LiveExampleL14.class.getResource("Example1.jar").getPath();

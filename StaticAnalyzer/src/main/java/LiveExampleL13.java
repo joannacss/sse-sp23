@@ -14,6 +14,12 @@ import com.ibm.wala.util.io.FileProvider;
 import java.io.File;
 import java.util.jar.JarFile;
 
+/**
+ * Example coded in class - Lecture 13.
+ * Walked through WALA's main data structures and how to create a CHA call graph.
+ *
+ * @author Joanna C. S. Santos
+ */
 public class LiveExampleL13 {
     public static void main(String[] args) throws Exception {
         String cp = LiveExampleL13.class.getResource("Example1.jar").getPath();
